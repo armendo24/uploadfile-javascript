@@ -11,16 +11,19 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/jszip.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.8.0/xlsx.js"></script>
+
+    <link href="style.css" rel="stylesheet">
     <title>uplodafile</title>
 </head>
 
 <body>
+
     <br>
     <div class="container ">
         <br>
         <div class="shadow p-2 rounded">
             <br>
-            <h3 class="text-center">อัพโหลดไฟล์</h3>
+            <h3 class="text-center header">อัพโหลดไฟล์</h3>
             <form>
                 <div class="input-group mb-3">
                     <input enctype="multipart/form-data" id="upload" type=file name="files[]" class="form-control" placeholder="ชื่อไฟล์" aria-label="Recipient's file">
@@ -30,36 +33,38 @@
             <!-- <button class="btn" onclick="test()">test</button> -->
             <br>
             <div class="table-responsive">
-            <table class="table table-striped table-hover table-sm " >
-           
-                <thead>
-                    <tr>
-                    <!-- <th class="text-center">std_id</th> -->
-                        <th class="text-center">std_code</th>
-                        <th class="text-center">std_tname</th>
-                        <th class="text-center">std_fname</th>
-                        <th class="text-center">std_lname</th>
-                        <th class="text-center">std_phone</th>
-                        <th class="text-center">std_email</th>
-                        <th class="text-center">std_race</th>
-                        <th class="text-center">std_nationnality</th>
-                        <th class="text-center">branch_id</th>
-                        <th class="text-center">department_id</th>
-                        <th class="text-center">admin_id</th>
-                    </tr>
-                </thead>
-                <tbody id="records_table">
+                <table class="table table-striped table-hover table-sm ">
+                    <thead>
+                        <tr>
+                            <!-- <th class="text-center">std_id</th> -->
+                            <th class="text-center">std_code</th>
+                            <th class="text-center">std_tname</th>
+                            <th class="text-center">std_fname</th>
+                            <th class="text-center">std_lname</th>
+                            <th class="text-center">std_phone</th>
+                            <th class="text-center">std_email</th>
+                            <th class="text-center">std_race</th>
+                            <th class="text-center">std_nationnality</th>
+                            <th class="text-center">branch_id</th>
+                            <th class="text-center">department_id</th>
+                            <th class="text-center">admin_id</th>
+                        </tr>
+                    </thead>
+                    <tbody id="records_table">
 
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
             </div>
         </div>
+        <br>
+        <br>
     </div>
 
 </body>
 <script>
     document.getElementById('upload').addEventListener('change', handleFileSelect, false);
     var json_object;
+    var status_branch_error = 1;
 
     function handleFileSelect(evt) {
 
@@ -77,27 +82,29 @@
                 });
                 workbook.SheetNames.forEach(function(sheetName) {
                     var XL_row_object = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-                    json_object = (XL_row_object);
-                    $table_tr = "";
-                    json_object.forEach(res => {
-                        $table_tr += "<tr>";
-                        // $table_tr += "<td>" + res.std_id + "</td>";
-                        $table_tr += "<td>" + res.std_code + "</td>";
-                        $table_tr += "<td>" + res.std_tname + "</td>";
-                        $table_tr += "<td>" + res.std_fname + "</td>";
-                        $table_tr += "<td>" + res.std_lname + "</td>";
-                        $table_tr += "<td>" + res.std_phone + "</td>";
-                        $table_tr += "<td>" + res.std_email + "</td>";
-                        $table_tr += "<td>" + res.std_race + "</td>";
-                        $table_tr += "<td>" + res.std_nationnality + "</td>";
-                        $table_tr += "<td>" + res.branch_id + "</td>";
-                        $table_tr += "<td>" + res.department_id + "</td>";
-                        $table_tr += "<td>" + res.admin_id + "</td>";
-                        $table_tr += "/<tr>";
-                    })
-                    $('#records_table').append($table_tr);
+                    json_object = XL_row_object;
 
-                    console.log(json_object);
+                    request = $.ajax({
+                        url: "check-data.php",
+                        type: "post",
+                        data: {
+                            data: json_object
+                        }
+                    });
+                    request.done(function(response, textStatus, jqXHR) {
+                        let res = JSON.parse(response);
+                        // console.log(res);
+                        if (res.status == 1) {
+                            $('#records_table').append(res.table);
+                            status_branch_error = res.status_branch_error
+                        }
+                    });
+                    request.fail(function(jqXHR, textStatus, errorThrown) {
+                        console.error(
+                            "The following error occurred: " +
+                            textStatus, errorThrown
+                        );
+                    });
                 })
             };
             reader.onerror = function(ex) {
@@ -110,8 +117,11 @@
 
     function uploadfile() {
         if (!json_object) {
-        alert("ไม่มีข้อมูล");
+            alert("ไม่มีข้อมูล");
             return
+        }else if(status_branch_error == 1){
+            alert("โปรดตรวจสอบข้อมูลสาขาวิชาให้ถูกต้อง!!");
+            return;
         }
         request = $.ajax({
             url: "upload-data.php",
@@ -134,5 +144,9 @@
         });
     }
 </script>
+
+
+
+
 
 </html>
